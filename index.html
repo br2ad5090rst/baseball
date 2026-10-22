@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="설치 없이 바로 즐기는 3D 야구 게임. PC·모바일 어디서나 9회까지 한 판!">
+<meta name="theme-color" content="#071321">
+<title>BASEBALL SIM 3D · 무료 3D 야구 게임</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071321;color:#f7faff;font-family:system-ui,"Malgun Gothic",sans-serif;overflow:hidden}#world{position:fixed;inset:0}canvas{display:block}
+.panel{position:fixed;z-index:3;background:#08172be8;border:1px solid #ffffff2b;border-radius:14px;box-shadow:0 8px 25px #0004}
+.scoreboard{top:12px;left:12px;padding:12px 16px;min-width:220px}.brand{font-size:18px;font-weight:950;letter-spacing:.5px}.brand span{color:#ffd166}.score{font-size:13px;color:#c6d8f4;margin-top:4px}.score strong{font-size:24px;color:#fff;padding:0 6px}.state{font-size:12px;margin-top:4px;color:#ffd166}
+#message{top:15px;left:50%;transform:translateX(-50%);padding:10px 17px;max-width:50vw;text-align:center;font-size:13px;font-weight:800;white-space:nowrap}
+.right{right:12px;top:12px;padding:12px;width:185px;font-size:12px;line-height:1.7}.right b{color:#ffd166}
+.bottom{position:fixed;z-index:4;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:96%}
+button{border:0;border-radius:11px;padding:12px 15px;font-weight:900;font-size:13px;cursor:pointer;background:#ffd166;color:#15233a;box-shadow:0 3px 0 #b9872d}button.alt{background:#e7efff;box-shadow:0 3px 0 #9aaecb}button.red{background:#ff7c80;box-shadow:0 3px 0 #b8434b}button:active{transform:translateY(2px);box-shadow:none}button:disabled{opacity:.45;cursor:default}
+#log{position:fixed;left:12px;bottom:90px;z-index:2;font-size:11px;line-height:1.6;color:#e4edff;text-shadow:0 1px 3px #000;max-width:300px}
+@media(max-width:650px){.scoreboard{top:8px;left:8px;padding:9px 11px;min-width:170px}.brand{font-size:15px}.right{top:92px;right:8px;width:155px;font-size:11px;padding:9px}#message{top:8px;left:auto;right:8px;transform:none;max-width:45vw;white-space:normal;font-size:11px}.bottom{bottom:8px;gap:6px}button{padding:11px 12px;font-size:12px}#log{bottom:135px;left:8px;max-width:46vw}}
+
+:root{--bg:#071321;--card:#0b1d36;--line:#ffffff2b;--txt:#f7faff;--sub:#bcd0f2;--gold:#ffd166}
+canvas{touch-action:none}
+.ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 30%,#12345fdd,#071321f2);overflow:auto}
+.ov.hide{display:none}
+.card{width:min(520px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px 24px;text-align:center;box-shadow:0 20px 60px #0008}
+.card h1{margin:0 0 4px;font-size:34px;font-weight:950;letter-spacing:.5px}.card h1 span{color:var(--gold)}
+.card p{margin:6px 0;color:var(--sub);font-size:14px;line-height:1.6}
+.how{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;text-align:left;font-size:13px;color:var(--txt)}
+.how div{background:#ffffff0f;border-radius:10px;padding:9px 11px;line-height:1.5}.how b{color:var(--gold);display:block;font-size:12px}
+.lb{margin:12px 0 4px;text-align:left;font-size:13px;background:#ffffff0f;border-radius:12px;padding:10px 12px}.lb h3{margin:0 0 6px;font-size:13px;color:var(--gold)}.lb ol{margin:0;padding:0;list-style:none}.lb li{display:flex;gap:8px;padding:3px 0;color:var(--txt)}.lb li .n{width:22px;color:var(--sub)}.lb li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb li.me{color:var(--gold);font-weight:800}.lb .em{color:var(--sub);font-size:12px}.nick{width:100%;margin:10px 0 2px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#ffffff14;color:#fff;font-size:15px;text-align:center}.big{font-size:17px;padding:14px 30px;width:100%;margin-top:4px}
+.row{display:flex;gap:8px;margin-top:10px}.row button{flex:1}
+.stats{display:flex;justify-content:space-around;margin:14px 0 4px;font-size:12px;color:var(--sub)}.stats strong{display:block;font-size:22px;color:#fff}
+.res{font-size:46px;margin:0}.final{font-size:30px;font-weight:950;margin:4px 0 8px}
+@media(max-width:480px){.how{grid-template-columns:1fr}.card h1{font-size:28px}}
+</style>
+</head>
+<body>
+<div id="world"></div>
+<div class="panel scoreboard"><div class="brand">⚾ BASEBALL <span>SIM 3D</span></div><div class="score">블루 스타즈 <strong id="runs">0</strong> : <strong id="away">0</strong> 레드 폭스</div><div class="state" id="state">1회초 · 0 아웃</div><div class="score" id="count">볼 0 · 스트라이크 0 · 주자 없음</div></div>
+<div class="panel" id="message">2초 후 자동으로 투구해요! (블루 스타즈 = 원정, 초 공격)</div>
+<div class="panel right"><b>경기 조작</b><br>투구: 2초 후 자동 (P·Enter로 바로 투구)<br>타격: 클릭 / Space<br>번트: B<br>도루: 1·2·3 (투구 전/중 준비)<br>도루 취소: R<br><br><span style="color:#bcd0f2">공이 홈플레이트에 올 때 타이밍 맞춰 스윙해! (조준 없음) 3회 아웃 → 공수 교대, 9회까지 진행!</span></div>
+<div id="log">게임 준비 완료.</div>
+<div class="bottom">
+<button class="alt" id="bunt">번트 (B)</button><button class="alt" id="steal1">1루 주자 도루 (1)</button><button class="alt" id="steal2">2루 주자 도루 (2)</button><button class="alt" id="steal3">홈스틸 (3)</button><button class="alt" id="retreat">주자 귀루 (R)</button><button class="red" id="reset">경기 다시 시작</button>
+</div>
+
+<div class="ov" id="startOv"><div class="card">
+<h1>⚾ BASEBALL <span>SIM 3D</span></h1>
+<p>설치·로그인 없이 바로 즐기는 3D 야구 게임<br>블루 스타즈가 되어 레드 폭스와 9회까지 승부!</p>
+<div class="how"><div><b>⚾ 타격</b>공이 홈플레이트에 올 때 화면 터치 / 클릭 / Space</div><div><b>🏏 번트</b>B 키 또는 번트 버튼</div><div><b>🏃 도루</b>1·2·3 키 또는 하단 버튼</div><div><b>🎯 투구</b>2초 후 자동 (P·Enter로 즉시)</div></div>
+<input class="nick" id="nick" maxlength="12" placeholder="닉네임 (랭킹에 표시돼요)" autocomplete="off"><button class="big" id="startBtn">▶ 게임 시작</button>
+<div class="stats" id="stat0"></div><div class="lb"><h3>🏆 전체 랭킹 (승수 순)</h3><div class="lbBody"><span class="em">불러오는 중…</span></div></div>
+</div></div>
+<div class="ov hide" id="endOv"><div class="card">
+<p class="res" id="endEmoji">🏆</p><h1 id="endTitle">경기 종료</h1>
+<div class="final" id="endScore"></div>
+<div class="stats" id="stat1"></div>
+<div class="lb"><h3>🏆 전체 랭킹 (승수 순)</h3><div class="lbBody"><span class="em">불러오는 중…</span></div></div><button class="big" id="againBtn">🔄 한 판 더!</button>
+<div class="row"><button class="alt" id="shareBtn">🔗 링크 공유</button><button class="alt" id="closeBtn">경기장 보기</button></div>
+</div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const root=document.querySelector('#world'),scene=new THREE.Scene();scene.background=new THREE.Color(0x83c9f6);scene.fog=new THREE.Fog(0x83c9f6,75,160);
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,300);camera.position.set(0,9,26);camera.lookAt(0,2,-8);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe2f6ff,0x2b4b2e,2.0));const sun=new THREE.DirectionalLight(0xfff0d0,3);sun.position.set(-20,35,20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);scene.add(sun);
+const M=(c,r=.8,metal=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:metal});
+const grass=M(0x278b43),grass2=M(0x31984a),dirt=M(0xb7783d),chalk=M(0xffffff),white=M(0xf1f4f8),blue=M(0x1457ce),red=M(0xd53d46),skin=M(0xc98b63),dark=M(0x18233a),batMat=M(0xc18a45),glove=M(0x633a25),gold=M(0xffd166);
+function mesh(geo,mat,parent=scene,pos=[0,0,0]){let o=new THREE.Mesh(geo,mat);o.position.set(...pos);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function box(w,h,d,mat,x,y,z,parent=scene){return mesh(new THREE.BoxGeometry(w,h,d),mat,parent,[x,y,z])}
+function ball(r,mat,x,y,z,parent=scene){return mesh(new THREE.SphereGeometry(r,16,12),mat,parent,[x,y,z])}
+function tube(points,mat,r=.035){let c=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return mesh(new THREE.TubeGeometry(c,Math.max(20,points.length*5),r,6,false),mat)}
+// field and striped grass
+box(180,.6,180,M(0x29445b),0,-.55,-25);
+box(100,.12,100,grass,0,-.23,-22);
+for(let i=0;i<12;i++)box(95,.025,4,i%2?grass:grass2,0,-.15,-44+i*4);
+ // curved wall boundary and outfield warning track
+for(let i=0;i<48;i++){let a=Math.PI*(.12+.76*i/47),x=Math.cos(a)*39,z=-Math.sin(a)*45-2;let w=box(2.05,2.7,.65,M(i%4===0?0x245c8e:0x173653),x,1.1,z);w.rotation.y=-a+Math.PI/2;box(2.05,.12,.72,gold,x,2.43,z)}
+// stadium stands and colorful spectators
+for(let side of [-1,1]){
+ for(let row=0;row<8;row++){let x=side*(23+row*1.7),y=3+row*.66,z=-19-row*.9;let st=box(4,.65,36,M(row%2?0x637e9c:0x485f7b),x,y,z);st.rotation.z=side*.12;
+ for(let j=0;j<54;j++){let px=x+(Math.random()-.5)*3.5,pz=z-17+j*.64;ball(.12,M([0xe7eaf0,0xe34b54,0xffcf60,0x3472d0,0x35a878][Math.floor(Math.random()*5)]),px,y+.45,pz)}}
+}
+// scoreboard + screen texture
+box(17,7,.7,dark,0,10,-34);box(16.3,5.8,.1,M(0x123c7d),0,10,-33.5);
+const c=document.createElement('canvas');c.width=512;c.height=180;const cx=c.getContext('2d');cx.fillStyle='#10366c';cx.fillRect(0,0,512,180);cx.textAlign='center';cx.fillStyle='#fff';cx.font='bold 43px sans-serif';cx.fillText('BASEBALL SIM',256,65);cx.fillStyle='#ffd166';cx.font='bold 34px sans-serif';cx.fillText('PLAY BALL!',256,125);let tex=new THREE.CanvasTexture(c);mesh(new THREE.PlaneGeometry(15.5,5.4),new THREE.MeshBasicMaterial({map:tex}),scene,[0,10,-33.42]);
+// light towers
+for(let x of [-29,29]){box(.25,17,.25,M(0x75869a),x,8,-24);box(4,2,.3,white,x,17,-24);for(let i=0;i<5;i++)for(let j=0;j<3;j++)ball(.12,M(0xfff5d0),x-1.4+i*.7,16.5+j*.45,-23.8)}
+// dirt diamond, foul lines, bases
+const diamond=mesh(new THREE.PlaneGeometry(22,22),dirt,scene,[0,-.12,-1]);diamond.rotation.x=-Math.PI/2;diamond.rotation.z=Math.PI/4;
+tube([[0,.02,0],[-26,.02,-26]],chalk,.045);tube([[0,.02,0],[26,.02,-26]],chalk,.045);
+const bases=[[0,0],[11,-11],[0,-22],[-11,-11]];for(const [x,z] of bases){let b=box(.8,.14,.8,white,x,.1,z);b.rotation.y=Math.PI/4}
+let mound=ball(1.3,dirt,0,.05,-12);mound.scale.set(1,.23,1);box(.9,.08,.7,white,0,.05,0);
+// detailed primitive human rig: torso, head, helmet/cap, limbs with pivots for running and swings
+let pc=0;const NUMS=[7,12,24,3,9,18,31,5,22,44,8,15];
+const mkTex=(t,col)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.fillStyle=col;x.font='bold 46px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(t,32,36);return new THREE.CanvasTexture(c)};
+function person(x,z,team,role,scale=1){
+ const k=pc++,sk=[skin,M(0xa8704c),M(0xe0a981),M(0x7a4d33)][k%4],hr=M([0x2a1c14,0x4a3020,0x151515,0x7a5a30][k%4]);
+ const um=role==='umpire',pants=um?M(0x4b5260):team===red?M(0xc9ced6):white,jer=team,under=M(team===red?0x1b2538:0xffffff),L=team===blue?'B':'R';
+ const g=new THREE.Group();g.rotation.order='YXZ';g.position.set(x,0,z);g.scale.setScalar(scale);scene.add(g);
+ const cap=(r,l,mat,p,par,s)=>{const o=mesh(new THREE.CapsuleGeometry(r,l,6,14),mat,par,p);if(s)o.scale.set(...s);return o};
+ const sph=(r,mat,p,par,s)=>{const o=ball(r,mat,p[0],p[1],p[2],par);if(s)o.scale.set(...s);return o};
+ const cyl=(rt,rb,h,mat,p,par,s)=>{const o=mesh(new THREE.CylinderGeometry(rt,rb,h,18),mat,par,p);if(s)o.scale.set(...s);return o};
+ const decal=(t,col,w,p,ry)=>{const o=new THREE.Mesh(new THREE.PlaneGeometry(w,w),new THREE.MeshBasicMaterial({map:mkTex(t,col),transparent:true}));o.position.set(...p);o.rotation.y=ry;g.add(o)};
+ // jersey: tapered torso, collar, placket, shoulders, belt, hips
+ const torso=cyl(.37,.28,.86,jer,[0,1.33,0],g,[1,1,.62]);cyl(.15,.17,.07,um?dark:white,[0,1.78,0],g,[1,1,.8]);
+ if(!um){box(.03,.78,.02,white,0,1.33,.236,g);decal(String(NUMS[k%12]),'#ffffff',.44,[0,1.38,-.226],Math.PI);decal(L,'#ffd166',.3,[0,1.52,.24],0)}
+ sph(.2,jer,[-.38,1.68,0],g,[1,.9,.9]);sph(.2,jer,[.38,1.68,0],g,[1,.9,.9]);
+ cyl(.3,.3,.08,dark,[0,.93,0],g,[1,1,.64]);box(.07,.06,.02,gold,0,.93,.2,g);cyl(.29,.31,.3,pants,[0,.82,0],g,[1,1,.66]);
+ // neck, head, face, hair, ears
+ cyl(.1,.12,.16,sk,[0,1.84,0],g);const head=sph(.29,sk,[0,2.03,0],g,[.92,1.06,.96]);sph(.2,sk,[0,1.94,.06],g,[1,.8,.9]);sph(.3,hr,[0,2.0,-.07],g,[.93,1,.9]);
+ sph(.06,sk,[-.27,2.01,0],g,[.5,1,.8]);sph(.06,sk,[.27,2.01,0],g,[.5,1,.8]);
+ for(const s of [-1,1]){sph(.05,white,[s*.1,2.05,.25],g,[1,.8,.5]);sph(.026,M(0x2b1a10),[s*.1,2.05,.278],g);box(.11,.022,.02,hr,s*.1,2.12,.262,g)}
+ sph(.045,sk,[0,1.98,.29],g,[1,1.1,.9]);box(.12,.02,.02,M(0x8a3b3b),0,1.89,.275,g);
+ // cap / helmet with logo
+ const cc=role==='batter'?blue:um?dark:team;
+ const dome=mesh(new THREE.SphereGeometry(.33,22,14,0,Math.PI*2,0,Math.PI/2),cc,g,[0,2.07,0]);dome.scale.set(.96,1,1);
+ const brim=mesh(new THREE.CylinderGeometry(.4,.4,.03,22,1,false,-Math.PI/2,Math.PI),cc,g,[0,2.07,.02]);brim.scale.set(.9,1,1);if(!um)decal(L,'#ffd166',.2,[0,2.14,.325],0);
+ if(role==='batter'){sph(.12,blue,[.3,2.0,0],g,[.6,1,1]);sph(.1,blue,[-.3,2.0,0],g,[.4,.8,.9])}
+ if(role==='catcher'){box(.76,.82,.14,M(0x2d3340),0,1.33,.27,g);mesh(new THREE.SphereGeometry(.36,12,8,0,Math.PI,0,Math.PI),new THREE.MeshBasicMaterial({color:0x222222,wireframe:true}),g,[0,2.03,.02])}
+ // legs: stripe, stirrup socks, cleats w/ soles, shin guards for catcher
+ const legs=[];
+ for(const s of [-1,1]){const hp=new THREE.Group();hp.position.set(s*.17,.82,0);g.add(hp);cap(.115,.5,pants,[0,-.4,0],hp);box(.02,.5,.08,um?dark:jer,s*.118,-.4,0,hp);cap(.12,.12,jer,[0,-.66,0],hp);
+  if(role==='catcher')cap(.125,.3,M(0x2d3340),[0,-.6,.06],hp);sph(.13,dark,[0,-.83,.08],hp,[1,.6,1.8]);box(.22,.03,.4,M(0xdddddd),0,-.9,.1,hp);legs.push(hp)}
+ // arms: jersey sleeve, forearm, wristband, hand/glove/mitt
+ const arms=[];
+ for(const s of [-1,1]){const sh=new THREE.Group();sh.position.set(s*.46,1.66,0);g.add(sh);cap(.1,.2,jer,[0,-.2,0],sh);cap(.075,.24,sk,[0,-.5,0],sh);cyl(.085,.085,.05,white,[0,-.62,0],sh);
+  const gl=(role==='fielder'||role==='pitcher'||role==='catcher')&&s<0;sph(gl?(role==='catcher'?.2:.14):.09,gl?glove:(role==='batter'?white:sk),[0,-.72,.03],sh);arms.push(sh)}
+ const rig={g,legs,arms,torso,head,role,bat:null};
+ if(role==='batter'){
+  arms[0].rotation.set(-.8,0,.4);arms[1].rotation.set(-.8,0,-.3);
+  const pv=new THREE.Group();pv.position.set(.12,1.42,.55);g.add(pv);
+  mesh(new THREE.CylinderGeometry(.075,.032,1.35,14),batMat,pv,[0,.68,0]);ball(.045,batMat,0,0,0,pv);pv.rotation.z=-.55;rig.bat=pv}
+ return rig}
+
+const batter=person(-1.9,2.4,blue,'batter',1.03);batter.g.rotation.y=.9;
+const pitcher=person(0,-12,red,'pitcher',.92);pitcher.g.rotation.y=0;
+const fielders=[person(-13,-16,red,'fielder',.82),person(13,-16,red,'fielder',.82),person(-21,-26,red,'fielder',.82),person(21,-26,red,'fielder',.82),person(0,-31,red,'fielder',.82),person(-8,-23,red,'fielder',.82),person(8,-23,red,'fielder',.82)];
+fielders.forEach((p,i)=>p.g.rotation.y=i%2?-.2:.2);
+// strike zone
+const zone=mesh(new THREE.BoxGeometry(2*1,1.7,.04),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.55}),scene,[0,1.25,.95]);
+const ballRig=new THREE.Group();scene.add(ballRig);const baseball=ball(.22,white,0,0,0,ballRig);for(let i=0;i<2;i++){let seam=mesh(new THREE.TorusGeometry(.15,.012,5,28),M(0xd53d46),ballRig);seam.rotation.y=i*Math.PI/2}ballRig.visible=false;
+const g=18,hip=1.2,ZX=1,Z0=.4,Z1=2.1,inZ=(x,y)=>Math.abs(x)<=ZX&&y>=Z0&&y<=Z1,V3=(x,y,z)=>new THREE.Vector3(x,y,z),cl=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
+const bp=[V3(11,0,-11),V3(0,0,-22),V3(-11,0,-11),V3(0,0,0)];
+const catcher=person(0,3.4,red,'catcher',.88);catcher.g.rotation.y=Math.PI;const ump=person(0,6,dark,'umpire',.95);ump.g.rotation.y=Math.PI;
+const allF=[pitcher,catcher,...fielders],homeP=[[0,-12],[0,3.4],[9,-12.5],[-9.5,-12.5],[-20,-32],[20,-32],[0,-38],[5,-19],[-5,-19]];
+const pool=[];for(let i=0;i<6;i++){const r=person(0,0,blue,'runner',.95);r.g.visible=false;pool.push(r)}
+const take=()=>{const r=pool.find(r=>!r.g.visible);r.g.visible=true;r.g.position.set(-1.2,0,1.2);r.run=0;r.sl=0;r.g.rotation.set(0,0,0);return r};
+const tws=[];function tw(o,to,ms,cb,rig){for(let i=tws.length-1;i>=0;i--)if(tws[i].o===o)tws.splice(i,1);tws.push({o,from:o.clone(),to,t0:performance.now(),ms,cb,rig})}
+const face=(r,v)=>{r.g.rotation.y=Math.atan2(v.x,v.z)},dirTo=i=>bp[i+1].clone().sub(bp[i]).normalize();
+const send=(r,b)=>{r.run=0;r.sl=0;r.g.rotation.x=0;face(r,bp[b].clone().sub(r.g.position));tw(r.g.position,bp[b].clone(),650,()=>{if(b===3)r.g.visible=false},r)};
+const puffs=[];function puff(p){for(let i=0;i<8;i++){const m=M(0xd9b27c);m.transparent=true;const o=ball(.18,m,p.x,.2,p.z);puffs.push({o,vx:rnd(-2,2),vz:rnd(-2,2),t:0})}}
+function slide(r){r.sl=1;puff(r.g.position)}
+function startRun(i,ms){const r=S.bases[i];if(!r||r.run)return;r.run=1;r.sl=0;face(r,dirTo(i));r.ok=Math.random()<(S.pt&&S.pt[0]==='직구'?.62:.8);tw(r.g.position,bp[i+1].clone(),ms,null,r);setTimeout(()=>{if(r.run)slide(r)},Math.max(100,ms-380))}
+function backAll(){S.bases.forEach((r,i)=>{if(r&&r.run){r.run=0;r.sl=0;r.g.rotation.x=0;face(r,dirTo(i));tw(r.g.position,bp[i].clone(),500,null,r)}})}
+function throwTo(b,fi){setTimeout(()=>{ballRig.visible=true;ballRig.position.set(0,1.4,3.2);tw(ballRig.position,V3(bp[b].x,1.1,bp[b].z+.5),450);tw(allF[fi].g.position,V3(bp[b].x+(b===1?1:-1),0,bp[b].z+1),350)},150)}
+const resetF=ms=>allF.forEach((p,i)=>tw(p.g.position,V3(homeP[i][0],0,homeP[i][1]),ms));
+const ret=new THREE.Mesh(new THREE.TorusGeometry(.9,.045,8,32),new THREE.MeshBasicMaterial({color:0xffd166,depthTest:false,transparent:true,opacity:.85}));ret.position.set(0,1.25,1.1);ret.renderOrder=9;ret.visible=false;scene.add(ret);
+const S={score:0,away:0,inning:1,top:true,outs:0,balls:0,strikes:0,bases:[null,null,null],armed:[0,0,0],phase:'idle',logs:[],fl:null,sw:null,rel:0,arrive:0,T:1000,tgt:{x:0,y:1.25},pt:null,start:V3(0,2.3,-11.5),ret:{x:0,y:1.25}};
+const $=id=>document.getElementById(id);function say(s){$('message').textContent=s;S.logs.unshift(s);S.logs=S.logs.slice(0,4);$('log').innerHTML=S.logs.map(t=>'• '+t).join('<br>')}
+function update(){$('runs').textContent=S.score;$('away').textContent=S.away;$('state').textContent=`${S.inning}회${S.top?'초':'말'} · ${S.outs} 아웃`;const bs=S.bases.map((v,i)=>v?`${i+1}루`:null).filter(Boolean);$('count').textContent=`볼 ${S.balls} · 스트라이크 ${S.strikes} · 주자 ${bs.length?bs.join(', '):'없음'}`}
+const addOut=()=>{S.outs=Math.min(3,S.outs+1);return S.outs>=3};
+function force(){const b=take(),c=S.bases.slice();let runs=0;if(c[0]){if(c[1]){if(c[2]){runs++;send(c[2],3)}S.bases[2]=c[1];send(c[1],2)}S.bases[1]=c[0];send(c[0],1)}S.bases[0]=b;send(b,0);S.score+=runs}
+function hitRun(n,bat=true){let runs=0;const b=S.bases,nb=[null,null,null];for(let i=2;i>=0;i--)if(b[i]){const t=i+n;if(t>=3){runs++;send(b[i],3)}else{nb[t]=b[i];send(b[i],t)}}if(bat){const r=take();if(n>=4){runs++;send(r,3)}else{nb[n-1]=r;send(r,n-1)}}S.bases=nb;S.score+=runs;return runs}
+function pitchPos(t){const e=V3(S.tgt.x,S.tgt.y,.95),s=S.start,k=(t-t*t*t)*1.5,b=S.pt[3];return V3(s.x+(e.x-s.x)*t-b[0]*k,s.y+(e.y-s.y)*t-b[1]*k,s.z+(e.z-s.z)*t)}
+const PT=[['직구',867,[140,152],[0,0]],['슬라이더',967,[124,136],[1,.2]],['커브',1100,[108,120],[0,-1.1]],['체인지업',1067,[118,128],[0,-.4]]];
+function pitch(){if(S.phase!=='idle'||!S.top)return;const pt=PT[Math.floor(Math.random()*4)];let tx,ty;if(Math.random()<.72){tx=rnd(-.9,.9);ty=rnd(.55,1.95)}else{const a=rnd(0,6.28),r=rnd(1.15,1.9);tx=Math.cos(a)*r;ty=Math.max(.1,1.25+Math.sin(a)*r*.8)}
+ S.pt=pt;S.spd=rnd(pt[2][0],pt[2][1]);S.tgt={x:tx,y:ty};S.T=pt[1];S.phase='wind';S.rel=performance.now()+650;S.arrive=S.rel+S.T;S.start=V3(rnd(-.2,.2),2.3,-11.5);say('투수 와인드업... 노려봐!');update()}
+function swing(bunt){if(S.phase==='over'||S.phase==='cpu')return;if(S.phase!=='pitch'){say(S.phase==='wind'?'아직 투구 전이야!':S.phase==='idle'?'곧 투구해! 조금만 기다려!':'');return}
+ S.phase='swing';S.sw={t0:performance.now(),bunt};const tc=performance.now()+80;setTimeout(()=>contact(tc,bunt),80)}
+function contact(tc,bunt){const t=Math.min(1,(tc-S.rel)/S.T),p=pitchPos(t),e=(tc-S.arrive)/1000,dx=rnd(-.3,.3),dy=rnd(-.5,.5),d=Math.hypot(dx,dy),W=bunt?.32:.27,R=bunt?1.9:1.6;ballRig.position.copy(p);
+ if(Math.abs(e)<W&&d<R)inPlay(e,dx,dy,d,W,R,bunt);
+ else if(Math.abs(e)<W*1.4&&d<R*1.7){backAll();S.armed=[0,0,0];if(S.strikes<2||bunt)S.strikes++;say(bunt?'번트 파울!':'파울 팁!');endPitch('foul',false)}
+ else{say(Math.abs(e)<W?'헛스윙!':e<0?'스윙이 너무 빨랐어!':'늦었어! 헛스윙!');endPitch('strike')}}
+function endPitch(kind,steal=true){S.phase='busy';let over=false;if(kind==='ball')S.balls++;if(kind==='strike')S.strikes++;
+ if(S.strikes>=3){say('삼진 아웃!');S.strikes=S.balls=0;over=addOut()}else if(S.balls>=4){say('볼넷! 타자 출루!');S.balls=S.strikes=0;backAll();force();S.armed=[0,0,0]}
+ if(!over&&steal)over=resolveSteals();else S.armed=[0,0,0];
+ update();setTimeout(()=>{ballRig.visible=false;resetF(500);over?endHalf():(S.phase='idle');update()},1100)}
+function resolveSteals(){let over=false;for(let i=2;i>=0;i--){if(!S.armed[i]||!S.bases[i]||over)continue;const r=S.bases[i],ok=!!r.ok;S.bases[i]=null;if(i<2)throwTo(i+1,i===0?7:3);
+ const fin=(hide)=>setTimeout(()=>{r.sl=0;r.run=0;r.g.rotation.x=0;if(hide)r.g.visible=false},hide?900:800);
+ if(ok){if(i===2){S.score++;say('홈 스틸 성공! 득점!');fin(true)}else{S.bases[i+1]=r;say(`${i+1}루 주자 도루 성공! 세이프!`);fin()}}else{say('도루 실패! 태그 아웃!');fin(true);over=addOut()}}S.armed=[0,0,0];return over}
+function steal(n){const i=n-1;if(!['idle','wind','pitch'].includes(S.phase)||!S.top){return}if(!S.bases[i]){say(`${n}루에 주자가 없어!`);return}if(i<2&&S.bases[i+1]&&!S.armed[i+1]){say('앞 베이스가 막혀 있어!');return}S.armed[i]=1;if(S.phase==='pitch')startRun(i,Math.max(500,S.arrive-performance.now()+600));else{const r=S.bases[i];face(r,dirTo(i));tw(r.g.position,bp[i].clone().add(dirTo(i).multiplyScalar(2)),350,null,r)}say(i===2?'3루 주자 홈스틸 준비! (투구 후 스타트)':`${n}루 주자 도루 준비! (투구 후 스타트)`)}
+function retreat(){if(S.phase==='pitch'||S.phase==='swing'){say('이미 스타트했어!');return}if(S.armed.some(Boolean)){S.armed.forEach((a,i)=>{if(a&&S.bases[i])tw(S.bases[i].g.position,bp[i].clone(),400,null,S.bases[i])});S.armed=[0,0,0];say('주자 귀루! 도루 시도 취소')}else say('도루 대기 중인 주자가 없어.')}
+function inPlay(e,dx,dy,d,W,R,bunt){
+ const q=((1-Math.abs(e)/W)+(1-d/R))/2,v=bunt?rnd(4,8):13+26*Math.pow(q,.7),phi=bunt?rnd(-8,6):18+40*cl(dy/.8,-1,1)+rnd(-4,4),th=bunt?cl((e/W*38+dx*8)*.5,-70,70):e/W*30+dx*8+rnd(-5,5);
+ S.armed=[0,0,0];S.phase='play';
+ const ph=phi*Math.PI/180,tr=th*Math.PI/180,vs=Math.sin(ph)*v,vc=Math.cos(ph)*v,ground=phi<8,tf=ground?1.6:(vs+Math.sqrt(vs*vs+2*g*hip))/g,rl=ground?v*.9:vc*tf,dir=V3(Math.sin(tr),0,-Math.cos(tr)),Rf=43.5+3.5*Math.cos(2*tr),foul=Math.abs(th)>45;
+ const land=dir.clone().multiplyScalar(ground?Math.min(16,rl):rl);let fi=0,d0=1e9;allF.forEach((f,i)=>{const dd=Math.hypot(homeP[i][0]-land.x,homeP[i][1]-land.z);if(dd<d0){d0=dd;fi=i}});
+ const TX=['','안타!','2루타!','3루타!','홈런!'];let r,dur=tf+.9,tmax=tf,caught=false,roll=0,chase=true;
+ if(foul){r={k:'foul',bunt,t:bunt?'번트 파울!':'파울!'};if(!bunt&&phi>50&&Math.random()<.35){r.out=1;r.t='파울 플라이 아웃!'}dur=ground?1.2:tf+.5;chase=!ground}
+ else if(!ground&&Rf/vc<tf){const tR=Rf/vc,yR=hip+vs*tR-.5*g*tR*tR;chase=false;
+  if(yR>3.2){r={k:'hit',n:4,t:'홈런!'};dur=tR+.9}else{const n=Math.abs(th)>28&&Math.random()<.3?3:2;r={k:'hit',n,t:'펜스 직격! '+TX[n]};tmax=tR;dur=tR+.7}}
+ else if(ground){dur=1.6;
+  if(bunt){if(S.bases.some(Boolean)&&S.outs<2&&Math.random()>.2)r={k:'sac',t:'희생번트 성공! 주자 진루'};else if(Math.random()<.25)r={k:'hit',n:1,t:'번트 안타!'};else r={k:'out',t:'번트 아웃!'}}
+  else if(Math.random()<cl(.5-(d0-3)*.05-(v-14)*.012,.05,.6))r=S.bases[0]&&S.outs<2&&Math.random()<.45?{k:'dp',t:'병살타! 더블 플레이'}:{k:'out',t:'땅볼 아웃!'};
+  else{const n=v>26&&Math.random()<.2?2:1;r={k:'hit',n,t:n>1?'내야를 뚫는 2루타!':'내야 안타!'}}}
+ else{const reach=11*tf;caught=d0<reach*.6||(d0<reach*.85&&Math.random()<.3);
+  if(caught){r=S.bases[2]&&S.outs<2&&rl>26?{k:'sf',t:'희생플라이! 3루 주자 득점!'}:{k:'out',t:rl<22?'내야 플라이 아웃!':'플라이 아웃!'};dur=tf+.4}
+  else{const x=Math.random(),n=rl<30?(x<.17?2:1):(x<.5?2:x<.62?3:1);r={k:'hit',n,t:TX[n]};roll=1;dur=tf+1.1}}
+ const fp=allF[fi].g.position;if(chase)tw(fp,V3(land.x,0,land.z),ground?800:tf*900);
+ ballRig.visible=true;S.fl={t:0,v,vs,vc,dir,ground,tmax,dur,caught,roll,tf,done:()=>finishPlay(r)};say(foul?'공이 파울 지역으로!':ground?'땅볼 타구!':q>.8?'쾅! 잘 맞았다!':'타구가 떴다!')}
+function finishPlay(r){let over=false;
+ if(r.k==='foul'){backAll();if(!r.out&&(S.strikes<2||r.bunt))S.strikes++;if(r.out)over=addOut();say(r.t);if(S.strikes>=3&&!r.out){say('번트 파울 삼진 아웃!');S.strikes=S.balls=0;over=addOut()}}
+ else{S.balls=S.strikes=0;
+  if(r.k==='hit'){const n=hitRun(r.n);say(r.t+(n?` ${n}점 득점!`:''))}
+  else{if(r.k==='sf'){const x=S.bases[2];S.bases[2]=null;send(x,3);S.score++}
+   if(r.k==='sac')hitRun(1,false);
+   if(r.k==='dp'){const x=S.bases[0];S.bases[0]=null;x.g.visible=false;over=addOut()}
+   over=addOut()||over;say(r.t)}}
+ S.phase='busy';update();setTimeout(()=>{resetF(500);ballRig.visible=false;over?endHalf():(S.phase='idle');update()},1200)}
+function clearBases(){pool.forEach(r=>r.g.visible=false);S.bases=[null,null,null];S.armed=[0,0,0];S.outs=S.balls=S.strikes=0}
+function gameOver(){S.phase='over';clearBases();setTimeout(showEnd,1800);const m=S.score>S.away?`경기 종료! 블루 스타즈 ${S.score}:${S.away} 승리! 🎉`:S.score<S.away?`경기 종료! 레드 폭스 ${S.away}:${S.score} 승리...`:`경기 종료! ${S.score}:${S.away} 무승부`;say(m);update()}
+function endHalf(){clearBases();
+ if(S.top){if(S.inning>=9&&S.away>S.score)return gameOver();S.top=false;S.phase='cpu';update();say(`${S.inning}회말 · 레드 폭스 공격 중...`);setTimeout(cpu,1500)}
+ else{if(S.inning>=9&&S.score!==S.away||S.inning>=12)return gameOver();S.inning++;S.top=true;S.phase='idle';say(`${S.inning}회초 · 블루 스타즈 공격!`);update()}}
+function cpu(){const runs=Math.floor(Math.random()*4);S.away+=runs;update();say(runs?`레드 폭스 ${runs}점 득점!`:'레드 폭스 무득점.');setTimeout(endHalf,2200)}
+function reset(){$('endOv').classList.add('hide');tws.length=0;S.fl=null;S.sw=null;Object.assign(S,{score:0,away:0,inning:1,top:true,phase:'idle',logs:[]});clearBases();ballRig.visible=false;resetF(1);say('새 경기 시작! 2초 후 투구해요.');update()}
+const ray=new THREE.Raycaster(),pl=new THREE.Plane(V3(0,0,1),-1.1),p3=V3(0,0,0);
+function mv(x,y){S.ret.x=cl(x,-2.4,2.4);S.ret.y=cl(y,-.1,3.2);ret.position.x=S.ret.x;ret.position.y=S.ret.y}
+function aim(e){ray.setFromCamera(new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1),camera);if(ray.ray.intersectPlane(pl,p3))mv(p3.x,p3.y)}
+const cv=renderer.domElement;cv.addEventListener('pointerdown',()=>swing(false));
+$('bunt').onclick=()=>swing(true);$('steal1').onclick=()=>steal(1);$('steal2').onclick=()=>steal(2);$('steal3').onclick=()=>steal(3);$('retreat').onclick=retreat;$('reset').onclick=reset;
+document.querySelectorAll('button').forEach(b=>b.addEventListener('focus',()=>b.blur()));
+addEventListener('keydown',e=>{if(!go)return;const k=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();swing(false)}else if(k==='b')swing(true);else if(k>='1'&&k<='3')steal(+k);else if(k==='r')retreat();else if(k==='p'||k==='enter'){e.preventDefault();pitch()}else{const m={arrowleft:[-.25,0],arrowright:[.25,0],arrowup:[0,.25],arrowdown:[0,-.25],a:[-.25,0],d:[.25,0],w:[0,.25],s:[0,-.25]}[k];if(m){e.preventDefault();mv(S.ret.x+m[0],S.ret.y+m[1])}}});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const clock=new THREE.Clock(),look=V3(0,2,-8);
+function animate(now){requestAnimationFrame(animate);if(go&&S.phase==='idle'&&S.top){if(!S.idleT)S.idleT=now;if(now-S.idleT>=2000){S.idleT=0;pitch()}}else S.idleT=0;const dt=Math.min(clock.getDelta(),.05);
+ for(let i=0;i<tws.length;){const w=tws[i],t=Math.min(1,(now-w.t0)/w.ms);w.o.lerpVectors(w.from,w.to,t);const R=w.rig;if(R&&t<1){if(R.sl){R.g.rotation.x=-1.25;R.legs.forEach(l=>l.rotation.x=0);R.arms.forEach(a=>a.rotation.x=-.6)}else{const q=Math.sin(now*.022);R.legs[0].rotation.x=q*.9;R.legs[1].rotation.x=-q*.9;R.arms[0].rotation.x=-q*.8;R.arms[1].rotation.x=q*.8;R.g.rotation.x=R.run?.28:.12}}if(t>=1){if(R&&!R.sl){R.g.rotation.x=0;R.legs.forEach(l=>l.rotation.x=0);R.arms.forEach(a=>a.rotation.x=0)}tws.splice(i,1);w.cb&&w.cb()}else i++}
+ for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.t+=dt;p.o.position.x+=p.vx*dt;p.o.position.z+=p.vz*dt;p.o.position.y+=.8*dt;p.o.scale.setScalar(1+p.t*2);p.o.material.opacity=Math.max(0,.75-p.t*1.3);if(p.t>.6){scene.remove(p.o);puffs.splice(i,1)}}
+ const wind=S.phase==='wind';
+ if(wind){const p=cl((now-(S.rel-650))/650,0,1);pitcher.arms[0].rotation.x=-3*p;if(now>=S.rel){S.phase='pitch';ballRig.visible=true;say(`${S.pt[0]} ${S.spd|0}km/h`);for(let i=0;i<3;i++)if(S.armed[i])startRun(i,S.T+600)}}else pitcher.arms[0].rotation.x=THREE.MathUtils.lerp(pitcher.arms[0].rotation.x,0,dt*6);
+ if(S.phase==='pitch'||S.phase==='swing'){const t=cl((now-S.rel)/S.T,0,1);if(S.phase==='pitch')ballRig.position.copy(pitchPos(t));ballRig.rotation.x+=dt*14;
+  if(S.phase==='pitch'&&now>=S.arrive){const z=inZ(S.tgt.x,S.tgt.y);say(z?'스트라이크! (루킹)':'볼!');tw(ballRig.position,V3(0,1,3.2),160);endPitch(z?'strike':'ball')}}
+ if(S.sw&&now-S.sw.t0<350){const p=Math.min(1,(now-S.sw.t0)/130);batter.bat.rotation.z=-.55+(S.sw.bunt?-.6:-2.1)*p;batter.bat.rotation.x=S.sw.bunt?-.9*p:0;batter.g.rotation.y=.9+(S.sw.bunt?0:.9*p)}
+ else{S.sw=null;batter.bat.rotation.z=THREE.MathUtils.lerp(batter.bat.rotation.z,-.55,dt*6);batter.bat.rotation.x=THREE.MathUtils.lerp(batter.bat.rotation.x,0,dt*6);batter.g.rotation.y=THREE.MathUtils.lerp(batter.g.rotation.y,.9,dt*6)}
+ if(S.fl){const f=S.fl;f.t+=dt;const t=f.t;let x,y,z;
+  if(f.ground){const dd=f.v*.9*(1-Math.exp(-1.1*t));x=f.dir.x*dd;z=.8+f.dir.z*dd;y=.22+Math.abs(Math.sin(t*9))*.25*Math.exp(-t)}
+  else{const tt=Math.min(t,f.tmax);let dd=f.vc*tt;if(f.roll&&t>f.tf)dd+=6*(1-Math.exp(-2*(t-f.tf)));x=f.dir.x*dd;z=.8+f.dir.z*dd;y=Math.max(.22,hip+f.vs*tt-.5*g*tt*tt);if(f.caught&&t>=f.tmax)y=1.1;else if(t>f.tmax)y=.22}
+  ballRig.position.set(x,y,z);ballRig.rotation.x+=dt*12;look.lerp(V3(x*.4,2,z*.4-6),dt*3);if(t>=f.dur){const d=f.done;S.fl=null;d()}}
+ else look.lerp(V3(0,2,-8),dt*2);
+ camera.lookAt(look);renderer.render(scene,camera)}
+camera.position.set(0,8,25);resetF(1);update();requestAnimationFrame(animate);
+
+// ===== site shell: start / end screens, local record =====
+var go=false;
+const KEY='baseballSim3dStats';
+function loadStats(){try{return Object.assign({w:0,l:0,d:0,best:0},JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {w:0,l:0,d:0,best:0}}}
+function saveStats(x){try{localStorage.setItem(KEY,JSON.stringify(x))}catch(e){}}
+function statHTML(x){return `<div><strong>${x.w}</strong>승</div><div><strong>${x.d}</strong>무</div><div><strong>${x.l}</strong>패</div><div><strong>${x.best}</strong>최다 득점</div>`}
+$('stat0').innerHTML=statHTML(loadStats());
+$('startBtn').onclick=()=>{go=true;$('startOv').classList.add('hide');reset()};
+function showEnd(){
+ if(S.phase!=='over')return;
+ const x=loadStats(),win=S.score>S.away,lose=S.score<S.away;
+ if(win)x.w++;else if(lose)x.l++;else x.d++;x.best=Math.max(x.best,S.score);saveStats(x);pushScore(win,lose,S.score);
+ $('endEmoji').textContent=win?'🏆':lose?'😢':'🤝';
+ $('endTitle').textContent=win?'승리!':lose?'아쉬운 패배':'무승부';
+ $('endScore').textContent=`블루 스타즈 ${S.score} : ${S.away} 레드 폭스`;
+ $('stat1').innerHTML=statHTML(x);$('stat0').innerHTML=statHTML(x);
+ $('endOv').classList.remove('hide');
+}
+$('againBtn').onclick=()=>reset();
+$('closeBtn').onclick=()=>$('endOv').classList.add('hide');
+$('shareBtn').onclick=async()=>{
+ const data={title:'BASEBALL SIM 3D',text:`⚾ 3D 야구 게임 ${S.score}:${S.away}! 같이 해봐요`,url:location.href.split('#')[0]};
+ try{if(navigator.share){await navigator.share(data);return}}catch(e){}
+ try{await navigator.clipboard.writeText(data.url);$('shareBtn').textContent='✅ 링크 복사됨'}catch(e){$('shareBtn').textContent='주소창의 링크를 복사하세요'}
+};
+
+// ===== shared leaderboard (db capability; falls back to local-only) =====
+let sdb=null,myId=null;
+const nickEl=$('nick');
+try{nickEl.value=localStorage.getItem('baseballNick')||''}catch(e){}
+function myNick(){let n=(nickEl.value||'').replace(/[<>]/g,'').trim().slice(0,12);if(!n){n='플레이어'+Math.floor(100+Math.random()*900);nickEl.value=n}try{localStorage.setItem('baseballNick',n)}catch(e){}return n}
+function lbMsg(t){document.querySelectorAll('.lbBody').forEach(b=>{b.textContent='';const sp=document.createElement('span');sp.className='em';sp.textContent=t;b.appendChild(sp)})}
+function renderLB(snap){
+ document.querySelectorAll('.lbBody').forEach(b=>{
+  b.textContent='';
+  if(snap.empty){const sp=document.createElement('span');sp.className='em';sp.textContent='아직 기록이 없어요. 첫 번째 주인공이 되어보세요!';b.appendChild(sp);return}
+  const ol=document.createElement('ol');
+  snap.docs.forEach((d,i)=>{const v=d.data()||{};const li=document.createElement('li');if(d.id===myId)li.className='me';
+   const n=document.createElement('span');n.className='n';n.textContent=i+1;
+   const nm=document.createElement('span');nm.className='nm';nm.textContent=String(v.nick||'익명').slice(0,12)+(d.id===myId?' (나)':'');
+   const r=document.createElement('span');r.textContent=`${v.w|0}승 ${v.d|0}무 ${v.l|0}패`;
+   li.append(n,nm,r);ol.appendChild(li)});
+  b.appendChild(ol)})
+}
+async function pushScore(win,lose,score){
+ if(!sdb||!myId)return;
+ try{
+  const ref=sdb.doc('scores/'+myId),snap=await ref.get(),b=snap.exists?(snap.data()||{}):{};
+  const nx={nick:myNick(),w:(b.w|0)+(win?1:0),d:(b.d|0)+(!win&&!lose?1:0),l:(b.l|0)+(lose?1:0),best:Math.max(b.best|0,score),t:Date.now()};
+  await ref.set(nx);
+  const hs=statHTML(nx);$('stat0').innerHTML=hs;$('stat1').innerHTML=hs;
+ }catch(e){}
+}
+(async()=>{
+ try{
+  if(!window.claude){lbMsg('랭킹은 claude.ai 링크에서 로그인하면 볼 수 있어요.');return}
+  const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);
+  if(!d||!u){lbMsg('랭킹은 로그인한 사용자에게만 표시돼요. 기록은 이 기기에 저장됩니다.');return}
+  sdb=d;myId=await u.id();
+  d.collection('scores').orderBy('w','desc').limit(10).onSnapshot(renderLB,()=>lbMsg('랭킹을 불러오지 못했어요.'));
+ }catch(e){lbMsg('랭킹을 불러오지 못했어요.')}
+})();
+$('startBtn').addEventListener('click',()=>{myNick()});
+</script>
+</body></html>
